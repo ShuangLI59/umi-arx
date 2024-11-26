@@ -241,7 +241,7 @@ def main(
         {
             "robot_type": "arx5",
             "robot_ip": "127.0.0.1",
-            "robot_port": 8765,
+            "robot_port": 8767,
             "robot_obs_latency": 0.005,  # TODO: need to measure
             "robot_action_latency": 0.04,  # TODO: need to measure
             "height_threshold": -0.2,  # TODO: ncscseed to measure
@@ -544,6 +544,8 @@ def main(
                         obs = env.get_obs()
                         obs_timestamps = obs["timestamp"]
                         print(f"Obs latency {time.time() - obs_timestamps[-1]}")
+                        if np.mean(obs["camera0_rgb"][-1]) < 0.1:
+                            raise RuntimeError("Camera not connected")
 
                         # run inference
                         s = time.time()

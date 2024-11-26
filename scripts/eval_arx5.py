@@ -49,7 +49,8 @@ from utils.real_inference_util import (
     get_real_umi_action,
 )
 from peripherals.spacemouse_shared_memory import Spacemouse
-from utils.pose_util import pose_to_mat, mat_to_pose
+from utils.pose_util import pose_to_mat, mat_to_pose, rot6d_to_mat
+import scipy.spatial.transform as st
 from modules.arx5_env import Arx5Env
 import zmq
 
@@ -573,6 +574,17 @@ def main(
 
                         socket.send_pyobj(obs_dict_np)
                         raw_action = socket.recv_pyobj()
+
+                        for k, raw_action_cmd in enumerate(raw_action):
+                            translation = raw_action_cmd[:3]
+                            rotation = st.Rotation.from_matrix(rot6d_to_mat(raw_action_cmd[3:9])).as_rotvec()
+                            if np.max(np.abs(translation)) / (k+1) > 0.05:
+                                print(f"==============={np.mean(obs['camera0_rgb'][-1])}================")
+                                print(f"  {translation}, {rotation}")
+
+                                raise RuntimeError("Action translation too large. Please check the input")
+
+                        
                         if type(raw_action) == str:
                             print(
                                 f"Inference from PolicyInferenceNode failed: {raw_action}. Please check the model."

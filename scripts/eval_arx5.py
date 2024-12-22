@@ -24,6 +24,7 @@ Press "S" to stop evaluation and gain control back.
 import sys
 import os
 from queue import Queue
+from omegaconf import open_dict
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(ROOT_DIR)
@@ -34,6 +35,7 @@ import os
 import pathlib
 import time
 from multiprocessing.managers import SharedMemoryManager
+import pdb
 
 import click
 import cv2
@@ -151,7 +153,7 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option(
     "--steps_per_inference",
     "-si",
-    default=12,
+    default=8,
     type=int,
     help="Action horizon for inference.",
 )
@@ -162,7 +164,7 @@ def solve_sphere_collision(ee_poses, robots_config):
     help="Max duration for each epoch in seconds.",
 )
 @click.option(
-    "--frequency", "-f", default=8, type=float, help="Control frequency in Hz."
+    "--frequency", "-f", default=5, type=float, help="Control frequency in Hz."
 )
 @click.option(
     "--command_latency",
@@ -201,7 +203,7 @@ def main(
     gripper_speed = 0.02
     cartesian_speed = 0.4
     orientation_speed = 0.8
-
+    policy_inference_waiting_time_s = 0.0
     os.makedirs(output, exist_ok=True)
     os.makedirs(os.path.join(output, "obs"), exist_ok=True)
     os.makedirs(os.path.join(output, "action"), exist_ok=True)
@@ -216,6 +218,7 @@ def main(
     )
     tx_robot1_robot0 = tx_left_right
 
+
     # load checkpoint
     ckpt_path = input
     if not ckpt_path.endswith(".ckpt"):
@@ -226,12 +229,31 @@ def main(
     # import torch
     # payload = torch.load(open(ckpt_path, 'rb'), map_location='cpu', pickle_module=dill)
     # cfg = payload['cfg']
+    
     obs_pose_rep = cfg.task.pose_repr.obs_pose_repr
     action_pose_repr = cfg.task.pose_repr.action_pose_repr
     print("obs_pose_rep", obs_pose_rep)
     print("action_pose_repr", action_pose_repr)
-    print("model_name:", cfg.policy.obs_encoder.model_name)
+    # print("model_name:", cfg.policy.obs_encoder.model_name)
     print("dataset_path:", cfg.task.dataset.dataset_path)
+
+    ####################################################################################################
+    ####################################################################################################
+    ####################################################################################################
+    # pdb.set_trace()
+    if 'unified-act-autoregressive' in ckpt_path:
+        with open_dict(cfg):
+            cfg.task.shape_meta = cfg.task.dataset.shape_meta
+            cfg.task.shape_meta.obs.camera0_rgb.horizon = 16
+            cfg.task.shape_meta.obs.robot0_eef_pos.horizon = 16
+        max_obs_buffer_size = 1000
+    else:
+        max_obs_buffer_size = 60
+
+    
+    ####################################################################################################
+    ####################################################################################################
+    ####################################################################################################
 
     # setup experiment
     dt = 1 / frequency
@@ -255,6 +277,7 @@ def main(
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://{policy_ip}:{policy_port}")
 
+    
     print("steps_per_inference:", steps_per_inference)
     with SharedMemoryManager() as shm_manager:
         with Spacemouse(
@@ -264,6 +287,7 @@ def main(
             robots_config=robots_config,
             frequency=frequency,
             obs_image_resolution=obs_res,
+            max_obs_buffer_size=max_obs_buffer_size,
             obs_float32=True,
             camera_reorder=[int(x) for x in camera_reorder],
             init_joints=init_joints,
@@ -300,9 +324,18 @@ def main(
                 video_paths.append(video_path)
             env.camera.start_recording(video_path=video_paths, start_time=time.time())
 
+            ####################################################################################################
+            ####################################################################################################
+            ####################################################################################################
+            time.sleep(3)
+            ####################################################################################################
+            ####################################################################################################
+            ####################################################################################################
+            
             print(f"Warming up policy inference")
             obs = env.get_obs()
             print(obs)
+
             episode_start_pose = list()
             for robot_id in range(len(robots_config)):
                 pose = np.concatenate(
@@ -313,6 +346,16 @@ def main(
                     axis=-1,
                 )[-1]
                 episode_start_pose.append(pose)
+
+            ####################################################
+            ## reduce observation
+            T = 16
+            select_timesteps = 4
+            indices = np.arange(0, T, step=T//select_timesteps)
+            obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+            ####################################################
+
+
             obs_dict_np = get_real_umi_obs_dict(
                 env_obs=obs,
                 shape_meta=cfg.task.shape_meta,
@@ -377,6 +420,7 @@ def main(
                     os.makedirs(
                         os.path.join(output, "action", f"{episode_id}"), exist_ok=True
                     )
+
                     vis_img = obs[f"camera{match_camera}_rgb"][-1]
                     obs_left_img = obs["camera0_rgb"][-1]
                     obs_right_img = obs["camera0_rgb"][-1]
@@ -539,7 +583,7 @@ def main(
                     perv_target_pose = None
                     while True:
                         # calculate timing
-                        t_cycle_end = t_start + (iter_idx + steps_per_inference) * dt
+                        t_cycle_end = t_start + (iter_idx + steps_per_inference) * dt + policy_inference_waiting_time_s * 2
 
                         # get obs
                         obs = env.get_obs()
@@ -547,6 +591,16 @@ def main(
                         print(f"Obs latency {time.time() - obs_timestamps[-1]}")
                         if np.mean(obs["camera0_rgb"][-1]) < 0.1:
                             raise RuntimeError("Camera not connected")
+                        # # HACK: Only use the last image    
+                        # obs["camera0_rgb"] = np.array([obs["camera0_rgb"][-1] for _ in obs["camera0_rgb"]])
+
+                        ####################################################
+                        ## reduce observation
+                        T = 16
+                        select_timesteps = 4
+                        indices = np.arange(0, T, step=T//select_timesteps)
+                        obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                        ####################################################
 
                         # run inference
                         s = time.time()
@@ -575,10 +629,12 @@ def main(
                         socket.send_pyobj(obs_dict_np)
                         raw_action = socket.recv_pyobj()
 
+                        print(raw_action[:, :3])
+
                         for k, raw_action_cmd in enumerate(raw_action):
                             translation = raw_action_cmd[:3]
                             rotation = st.Rotation.from_matrix(rot6d_to_mat(raw_action_cmd[3:9])).as_rotvec()
-                            if np.max(np.abs(translation)) / (k+1) > 0.05:
+                            if np.max(np.abs(translation)) / (k+1) > 0.1:
                                 print(f"==============={np.mean(obs['camera0_rgb'][-1])}================")
                                 print(f"  {translation}, {rotation}")
 
@@ -627,7 +683,7 @@ def main(
                         # the same step actions are always the target for
                         action_timestamps = (
                             np.arange(len(action), dtype=np.float64)
-                        ) * dt + obs_timestamps[-1]
+                        ) * dt + obs_timestamps[-1] + policy_inference_waiting_time_s
                         # action_exec_latency = 0.01
                         # curr_time = time.time()
                         # is_new = action_timestamps > (curr_time + action_exec_latency)

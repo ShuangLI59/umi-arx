@@ -88,6 +88,7 @@ class UvcCamera(mp.Process):
             put_desired_frequency=capture_fps,
         )
 
+   
         ring_buffer = SharedMemoryRingBuffer.create_from_examples(
             shm_manager=shm_manager,
             examples=examples if transform is None else transform(dict(examples)),

@@ -51,6 +51,11 @@ class Arx5Env:
         # shared memory
         shm_manager=None,
     ):
+        
+        
+        # import pdb
+        # pdb.set_trace()
+
         output_dir = pathlib.Path(output_dir)
         assert output_dir.parent.is_dir()
         video_dir = output_dir.joinpath("videos")

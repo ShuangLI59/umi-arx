@@ -403,7 +403,7 @@ class Arx5Controller(mp.Process):
                         best_latency = np.arange(
                             matching_dt, max_latency, latency_precision
                         )[np.argmin(errors)]
-                        # best_latency = 0.0
+                        # best_latency = 1.0
 
                         smoothened_input_poses = input_poses
                         new_times = input_times - input_times[0] + t_now - best_latency

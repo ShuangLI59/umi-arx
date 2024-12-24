@@ -114,6 +114,7 @@ def get_image_transform(
         c_slice = slice(None, None, -1)
 
     def transform(img: np.ndarray):
+        # print(img.shape, ih, iw)
         assert img.shape == ((ih, iw, 3))
         # resize
         img = cv2.resize(img, (rw, rh), interpolation=interp_method)

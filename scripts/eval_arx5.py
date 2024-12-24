@@ -354,6 +354,7 @@ def main(
                 select_timesteps = 4
                 indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
                 obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                print('indices', indices)
             ####################################################
 
 
@@ -602,6 +603,7 @@ def main(
                             select_timesteps = 4
                             indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
                             obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                            print('indices', indices)
                         ####################################################
 
                         # run inference

@@ -349,10 +349,11 @@ def main(
 
             ####################################################
             ## reduce observation
-            T = 16
-            select_timesteps = 4
-            indices = np.arange(0, T, step=T//select_timesteps)
-            obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+            if obs['camera0_rgb'].shape[0] > 4:
+                T = 16
+                select_timesteps = 4
+                indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
+                obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
             ####################################################
 
 
@@ -596,10 +597,11 @@ def main(
 
                         ####################################################
                         ## reduce observation
-                        T = 16
-                        select_timesteps = 4
-                        indices = np.arange(0, T, step=T//select_timesteps)
-                        obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                        if obs['camera0_rgb'].shape[0] > 4:
+                            T = 16
+                            select_timesteps = 4
+                            indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
+                            obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
                         ####################################################
 
                         # run inference

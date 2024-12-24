@@ -20,7 +20,7 @@
 
 python scripts/eval_arx5.py \
     -i ../diffusion_policy/data/outputs_v4/umi/unified-act-autoregressive-cant-proj-proprioception-newact/checkpoints/latest.ckpt \
-    -o data/experiments/1222 \
+    -o data/experiments/1223 \
     --no_mirror --policy_port 8768 
     # --policy_ip 172.24.95.38
 

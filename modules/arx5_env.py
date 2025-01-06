@@ -146,6 +146,8 @@ class Arx5Env:
                         img = np.ascontiguousarray(f(img))
                         if is_mirror is not None:
                             img[is_mirror] = img[:, ::-1, :][is_mirror]
+                            
+                        
                         img = draw_predefined_mask(
                             img,
                             color=(0, 0, 0),

@@ -153,7 +153,7 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option(
     "--steps_per_inference",
     "-si",
-    default=8,
+    default=12,
     type=int,
     help="Action horizon for inference.",
 )
@@ -164,7 +164,7 @@ def solve_sphere_collision(ee_poses, robots_config):
     help="Max duration for each epoch in seconds.",
 )
 @click.option(
-    "--frequency", "-f", default=5, type=float, help="Control frequency in Hz."
+    "--frequency", "-f", default=8, type=float, help="Control frequency in Hz."
 )
 @click.option(
     "--command_latency",
@@ -177,6 +177,8 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option("-sf", "--sim_fov", type=float, default=None)
 @click.option("-ci", "--camera_intrinsics", type=str, default=None)
 @click.option("--mirror_swap", is_flag=True, default=False)
+@click.option("--short_history", is_flag=True, default=False)
+@click.option("--different_history_freq", is_flag=True, default=False)
 def main(
     input,
     output,
@@ -196,6 +198,8 @@ def main(
     sim_fov,
     camera_intrinsics,
     mirror_swap,
+    short_history,
+    different_history_freq,
 ):
     pid = os.getpid()
     os.sched_setaffinity(pid, [7])
@@ -248,7 +252,7 @@ def main(
             cfg.task.shape_meta.obs.robot0_eef_pos.horizon = 16
         max_obs_buffer_size = 1000
     else:
-        max_obs_buffer_size = 60
+        max_obs_buffer_size = 1000
 
     
     ####################################################################################################
@@ -349,12 +353,27 @@ def main(
 
             ####################################################
             ## reduce observation
+            original_imgs = obs['camera0_rgb']
             if obs['camera0_rgb'].shape[0] > 4:
-                T = 16
-                select_timesteps = 4
-                indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
-                obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
-                print('indices', indices)
+                if short_history:
+                    obs["camera0_rgb"] = obs['camera0_rgb'][-1:]
+                    obs["robot0_eef_pos"] = obs["robot0_eef_pos"][-2:]
+                    obs["robot0_eef_rot_axis_angle"] = obs["robot0_eef_rot_axis_angle"][-2:]
+                    obs["robot0_gripper_width"] = obs["robot0_gripper_width"][-2:]
+                    # obs["robot0_eef_rot_axis_angle_wrt_start"] = obs["robot0_eef_rot_axis_angle_wrt_start"][-2:]
+                else:
+                    T = 16
+                    # select_timesteps = 4
+                    # indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
+                    # indices = [12, 13, 14, 15]
+                    indices = [3, 7, 11, 15]
+                    obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                    
+                    if different_history_freq:
+                        obs["robot0_eef_pos"] = obs["robot0_eef_pos"][indices]
+                        obs["robot0_eef_rot_axis_angle"] = obs["robot0_eef_rot_axis_angle"][indices]
+                        obs["robot0_gripper_width"] = obs["robot0_gripper_width"][indices]
+                    print('indices', indices)
             ####################################################
 
 
@@ -365,6 +384,7 @@ def main(
                 tx_robot1_robot0=tx_robot1_robot0,
                 episode_start_pose=episode_start_pose,
             )
+            
 
             socket.send_pyobj(obs_dict_np)
             print(
@@ -598,12 +618,27 @@ def main(
 
                         ####################################################
                         ## reduce observation
+                        original_imgs = obs['camera0_rgb']
                         if obs['camera0_rgb'].shape[0] > 4:
-                            T = 16
-                            select_timesteps = 4
-                            indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
-                            obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
-                            print('indices', indices)
+                            if short_history:
+                                obs["camera0_rgb"] = obs['camera0_rgb'][-1:]
+                                obs["robot0_eef_pos"] = obs["robot0_eef_pos"][-2:]
+                                obs["robot0_eef_rot_axis_angle"] = obs["robot0_eef_rot_axis_angle"][-2:]
+                                obs["robot0_gripper_width"] = obs["robot0_gripper_width"][-2:]
+                                # obs["robot0_eef_rot_axis_angle_wrt_start"] = obs["robot0_eef_rot_axis_angle_wrt_start"][-2:]
+                            else:
+                                T = 16
+                                # select_timesteps = 4
+                                # indices = np.arange(0, T, step=T//select_timesteps) + select_timesteps - 1
+                                # indices = [12, 13, 14, 15]
+                                indices = [3, 7, 11, 15]
+                                obs["camera0_rgb"] = obs['camera0_rgb'][indices, :, :, :]
+                                
+                                if different_history_freq:
+                                    obs["robot0_eef_pos"] = obs["robot0_eef_pos"][indices]
+                                    obs["robot0_eef_rot_axis_angle"] = obs["robot0_eef_rot_axis_angle"][indices]
+                                    obs["robot0_gripper_width"] = obs["robot0_gripper_width"][indices]
+                                print('indices', indices)
                         ####################################################
 
                         # run inference
@@ -619,6 +654,7 @@ def main(
                             "obs_dict_np": obs_dict_np,
                             "obs_pose_rep": obs_pose_rep,
                             "obs": obs,
+                            "original_imgs": original_imgs,
                             "episode_start_pose": episode_start_pose,
                             "tx_robot1_robot0": tx_robot1_robot0,
                         }

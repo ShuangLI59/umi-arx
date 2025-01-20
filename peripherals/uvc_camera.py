@@ -84,7 +84,7 @@ class UvcCamera(mp.Process):
             shm_manager=shm_manager,
             examples=vis_examples,
             get_max_k=1,
-            get_time_budget=0.2,
+            get_time_budget=0.5,
             put_desired_frequency=capture_fps,
         )
 
@@ -93,7 +93,7 @@ class UvcCamera(mp.Process):
             shm_manager=shm_manager,
             examples=examples if transform is None else transform(dict(examples)),
             get_max_k=get_max_k,
-            get_time_budget=0.2,
+            get_time_budget=0.5,
             put_desired_frequency=put_fps,
         )
 

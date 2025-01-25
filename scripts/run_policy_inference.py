@@ -9,6 +9,9 @@ os.chdir(ROOT_DIR)
 
 import click
 import zmq
+import pickle
+import numpy as np
+import time
 
 @click.command()
 @click.option("--ckpt_path", type=str, required=True)
@@ -36,7 +39,13 @@ def main(ckpt_path: str, policy_ip: str, policy_port: int, data_dir: str):
         for obs_file in os.listdir(episode_obs_path):
             obs_file_path = os.path.join(episode_obs_path, obs_file)
             with open(obs_file_path, "rb") as f:
-                obs = pickle.load(f)
+                obs = np.load(f, allow_pickle=True).item()
+            obs_dict_np = obs["obs_dict_np"]
+            # print(obs_dict_np.keys())
+            start_time = time.time()
+            socket.send_pyobj(obs_dict_np)
+            raw_action = socket.recv_pyobj()
+            print(f"Time taken: {time.time() - start_time}")
 
 
 if __name__ == "__main__":

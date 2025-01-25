@@ -125,20 +125,13 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option("--output", "-o", required=True, help="Directory to save recording")
 @click.option("--policy_ip", default="localhost")
 @click.option("--policy_port", default=8766)
-@click.option(
-    "--match_dataset",
-    "-m",
-    default=None,
-    help="Dataset used to overlay and adjust initial condition",
-)
+@click.option("--match_dataset_path", default=None, type=str)
 @click.option(
     "--match_episode",
-    "-me",
     default=None,
     type=int,
     help="Match specific episode from the match dataset",
 )
-@click.option("--match_camera", "-mc", default=0, type=int)
 @click.option("--camera_reorder", "-cr", default="0")
 @click.option(
     "--vis_camera_idx", default=0, type=int, help="Which RealSense camera to visualize."
@@ -179,14 +172,14 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option("--mirror_swap", is_flag=True, default=False)
 @click.option("--short_history", is_flag=True, default=False)
 @click.option("--different_history_freq", is_flag=True, default=False)
+@click.option("--task_name", type=str, default='')
 def main(
     input,
     output,
     policy_ip,
     policy_port,
-    match_dataset,
+    match_dataset_path,
     match_episode,
-    match_camera,
     camera_reorder,
     vis_camera_idx,
     init_joints,
@@ -200,6 +193,7 @@ def main(
     mirror_swap,
     short_history,
     different_history_freq,
+    task_name,
 ):
     pid = os.getpid()
     os.sched_setaffinity(pid, [7])
@@ -211,6 +205,31 @@ def main(
     os.makedirs(output, exist_ok=True)
     os.makedirs(os.path.join(output, "obs"), exist_ok=True)
     os.makedirs(os.path.join(output, "action"), exist_ok=True)
+
+    if match_dataset_path is not None:
+        assert match_episode is not None
+        assert os.path.exists(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy")), "match_episode does not exist"
+        match_episode_min = match_episode
+        while True:
+            match_episode_min -= 1
+            if not os.path.exists(os.path.join(match_dataset_path, "obs", f"{match_episode_min}/0.npy")):
+                break
+        match_episode_min += 1
+        match_episode_max = match_episode
+        while True:
+            match_episode_max += 1
+            if not os.path.exists(os.path.join(match_dataset_path, "obs", f"{match_episode_max}/0.npy")):
+                break
+        match_episode_max -= 1
+        print(f"match_episode: {match_episode}, match_episode_min: {match_episode_min}, match_episode_max: {match_episode_max}")
+
+
+    ###################################################################################################################################################################################################
+    if task_name == 'cup':
+        no_mirror = True
+    else:
+        no_mirror = False
+    ###################################################################################################################################################################################################
 
     tx_left_right = np.array(
         [
@@ -384,6 +403,10 @@ def main(
                 episode_start_pose=episode_start_pose,
             )
             
+            
+            ####################################################################################################
+            obs_dict_np['task_name'] = task_name
+            ####################################################################################################
 
             socket.send_pyobj(obs_dict_np)
             print(
@@ -411,6 +434,7 @@ def main(
 
             print("Ready!")
             while True:
+                last_control_is_human = True
                 # ========= human control loop ==========
                 print("Human in control!")
                 robot_states = env.get_robot_state()
@@ -441,15 +465,17 @@ def main(
                     os.makedirs(
                         os.path.join(output, "action", f"{episode_id}"), exist_ok=True
                     )
+                    vis_img = obs[f"camera0_rgb"][-1]
 
-                    vis_img = obs[f"camera{match_camera}_rgb"][-1]
-                    obs_left_img = obs["camera0_rgb"][-1]
-                    obs_right_img = obs["camera0_rgb"][-1]
-                    vis_img = np.concatenate(
-                        [obs_left_img, obs_right_img, vis_img], axis=1
-                    )
+                    if match_dataset_path is not None:
+                        assert match_episode is not None
+                        match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True)
+                        obs_left_img = match_data["obs"]['camera0_rgb'][-1]
+                        vis_img = np.concatenate(
+                            [obs_left_img, vis_img], axis=1
+                        )
 
-                    text = f"Episode: {episode_id}"
+                    text = f"Episode: {episode_id}, matching: {match_episode} ({match_dataset_path})"
                     cv2.putText(
                         vis_img,
                         text,
@@ -486,12 +512,34 @@ def main(
                             # Next episode
                             if match_episode is not None:
                                 match_episode = min(
-                                    match_episode + 1, env.replay_buffer.n_episodes - 1
+                                    match_episode + 1, match_episode_max
                                 )
                         elif key_stroke == KeyCode(char="w"):
                             # Prev episode
                             if match_episode is not None:
-                                match_episode = max(match_episode - 1, 0)
+                                match_episode = max(match_episode - 1, match_episode_min)
+                        elif key_stroke == KeyCode(char="m"):
+                            # Move robot to the starting pose in waiting_time seconds
+                            waiting_time = 5.0
+
+                            if match_episode and match_dataset_path is not None:
+                                # DEBUG: to be tested
+                                match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True)
+                                for robot_idx in range(len(robots_config)):
+                                    target_pose = match_data["obs"][f"robot{robot_idx}_eef_pos"][-1]
+                                    gripper_target_pos = match_data["obs"][f"robot{robot_idx}_gripper_width"][-1]
+                                action = np.zeros((7 * target_pose.shape[0],))
+                                for robot_idx in range(target_pose.shape[0]):
+                                    action[7 * robot_idx + 0 : 7 * robot_idx + 6] = target_pose[robot_idx]
+                                    action[7 * robot_idx + 6] = gripper_target_pos[robot_idx]
+                                env.exec_actions(
+                                    actions=[action],
+                                    timestamps=[t_command_target - time.monotonic() + time.time() + waiting_time],
+                                    compensate_latency=False,
+                                )
+                                precise_wait(t_command_target - time.monotonic() + time.time() + waiting_time)
+                                iter_idx += int(waiting_time / dt)
+                            
                         elif key_stroke == Key.backspace:
                             if click.confirm("Are you sure to drop an episode?"):
                                 env.drop_episode()
@@ -595,6 +643,8 @@ def main(
                         )[-1]
                         episode_start_pose.append(pose)
 
+
+
                     # wait for 1/30 sec to get the closest frame actually
                     # reduces overall latency
                     frame_latency = 1 / 60
@@ -614,7 +664,15 @@ def main(
                             raise RuntimeError("Camera not connected")
                         # # HACK: Only use the last image    
                         # obs["camera0_rgb"] = np.array([obs["camera0_rgb"][-1] for _ in obs["camera0_rgb"]])
+                        if last_control_is_human:
+                            # Pad the entire observatioscsn with the last frame
+                            print(f"padding using the last observation")
+                            for k, v in obs.items():
+                                if k != 'timestamp':
+                                    original_length = v.shape[0]
+                                    obs[k] = np.concatenate([v[-1:]] * original_length, axis=0)
 
+                        last_control_is_human = False
                         ####################################################
                         ## reduce observation
                         original_imgs = obs['camera0_rgb']
@@ -649,6 +707,12 @@ def main(
                             tx_robot1_robot0=tx_robot1_robot0,
                             episode_start_pose=episode_start_pose,
                         )
+                        
+                        ####################################################################################################
+                        obs_dict_np['task_name'] = task_name
+                        ####################################################################################################
+
+
                         obs_data = {
                             "obs_dict_np": obs_dict_np,
                             "obs_pose_rep": obs_pose_rep,
@@ -664,7 +728,8 @@ def main(
                             obs_data,
                             allow_pickle=True,
                         )
-
+                        
+                        
                         socket.send_pyobj(obs_dict_np)
                         raw_action = socket.recv_pyobj()
 

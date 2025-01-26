@@ -50,6 +50,7 @@ from utils.real_inference_util import (
     get_real_umi_obs_dict,
     get_real_umi_action,
 )
+from utils.cv_util import draw_predefined_mask
 from peripherals.spacemouse_shared_memory import Spacemouse
 from utils.pose_util import pose_to_mat, mat_to_pose, rot6d_to_mat
 import scipy.spatial.transform as st
@@ -319,7 +320,7 @@ def main(
             # obs
             camera_obs_horizon=cfg.task.shape_meta.obs.camera0_rgb.horizon,
             robot_obs_horizon=cfg.task.shape_meta.obs.robot0_eef_pos.horizon,
-            no_mirror=no_mirror,
+            no_mirror=False, # masks will be applied in this script
             # fisheye_converter=fisheye_converter,
             mirror_swap=mirror_swap,
             # action
@@ -457,6 +458,14 @@ def main(
                     # pump obs
                     obs = env.get_obs()
 
+                    if no_mirror:
+                        for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                            obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                                camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                            )
+
+
+
                     # visualize
                     episode_id = env.replay_buffer.n_episodes
                     os.makedirs(
@@ -550,7 +559,19 @@ def main(
                             control_robot_idx_list = [0]
                         elif key_stroke == KeyCode(char="2"):
                             control_robot_idx_list = [1]
-
+                        elif key_stroke == KeyCode(char="x"):
+                            if task_name == "cup":
+                                task_name = "towel"
+                                no_mirror = False
+                            elif task_name == "towel":
+                                task_name = "mouse"
+                            elif task_name == "mouse":
+                                task_name = "cup"
+                                no_mirror = True
+                            else:
+                                assert False
+                            print(f"{task_name=}, {no_mirror=}")
+                    
                     if start_policy:
                         break
                     precise_wait(t_sample)
@@ -632,6 +653,11 @@ def main(
 
                     # get current pose
                     obs = env.get_obs()
+                    if no_mirror:
+                        for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                            obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                                camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                            )
                     episode_start_pose = list()
                     for robot_id in range(len(robots_config)):
                         pose = np.concatenate(
@@ -658,6 +684,11 @@ def main(
 
                         # get obs
                         obs = env.get_obs()
+                        if no_mirror:
+                            for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                                obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                                    camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                                )
                         obs_timestamps = obs["timestamp"]
                         print(f"Obs latency {time.time() - obs_timestamps[-1]}")
                         if np.mean(obs["camera0_rgb"][-1]) < 0.1:

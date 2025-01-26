@@ -20,12 +20,41 @@ pkill -f eval_arx5
 
 
 ## ours
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2/checkpoints/latest.ckpt \
+#     -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2-mouse \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-5-mouse \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name mouse
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5 \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
 python scripts/eval_arx5.py \
-    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2/checkpoints/latest.ckpt \
-    -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2-mouse \
+    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5/checkpoints/latest.ckpt \
+    -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5 \
     --different_history_freq \
     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
-    --task_name towel
+    --task_name cup
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype4-lr1e-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype4-lr1e-5-mouse \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
 
 # --task_name towel
 # --task_name mouse

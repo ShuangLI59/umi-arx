@@ -41,12 +41,12 @@ pkill -f eval_arx5
 #     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
 #     --task_name cup
 
-python scripts/eval_arx5.py \
-    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5/checkpoints/latest.ckpt \
-    -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5 \
-    --different_history_freq \
-    --policy_port 8768 --frequency 5 --steps_per_inference 4 \
-    --task_name cup
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0124-data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5 \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
 
 # python scripts/eval_arx5.py \
 #     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype4-lr1e-5/checkpoints/latest.ckpt \
@@ -56,5 +56,49 @@ python scripts/eval_arx5.py \
 #     --task_name cup
 
 
-# --task_name towel
-# --task_name mouse
+
+# =========================================================================
+#                               Jan 26
+# =========================================================================
+
+# ====================Mixed====================
+# DP
+python scripts/eval_arx5.py \
+    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm/checkpoints/latest.ckpt \
+    -o data/experiments/0124_500data_dp \
+    --policy_port 8769 \
+    --frequency 5 --steps_per_inference 4 \
+    --task_name cup \
+    --match_dataset_path data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-cup-eval-final \
+    --match_episode 0
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm-lang/checkpoints/latest.ckpt \
+#     -o data/experiments/0124_500data_dp \
+#     --policy_port 8769 \
+#     --frequency 5 --steps_per_inference 4 \
+#     --task_name mouse
+
+
+# Ours
+#### For evaluation
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-towel-eval-black-gripper \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name towel
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5/checkpoints/latest.ckpt \
+#     -o data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2/checkpoints/latest.ckpt \
+#     -o data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-2-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup

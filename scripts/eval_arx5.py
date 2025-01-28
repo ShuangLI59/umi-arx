@@ -320,7 +320,7 @@ def main(
             # obs
             camera_obs_horizon=cfg.task.shape_meta.obs.camera0_rgb.horizon,
             robot_obs_horizon=cfg.task.shape_meta.obs.robot0_eef_pos.horizon,
-            no_mirror=False, # masks will be applied in this script
+            no_mirror=no_mirror, # masks will be applied in this script
             # fisheye_converter=fisheye_converter,
             mirror_swap=mirror_swap,
             # action
@@ -350,7 +350,7 @@ def main(
             ####################################################################################################
             ####################################################################################################
             ####################################################################################################
-            time.sleep(3)
+            time.sleep(1)
             ####################################################################################################
             ####################################################################################################
             ####################################################################################################
@@ -458,11 +458,11 @@ def main(
                     # pump obs
                     obs = env.get_obs()
 
-                    if no_mirror:
-                        for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
-                            obs[f"camera0_rgb"][i] = draw_predefined_mask(
-                                camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
-                            )
+                    # if no_mirror:
+                    #     for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                    #         obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                    #             camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                    #         )
 
 
 
@@ -478,7 +478,7 @@ def main(
 
                     if match_dataset_path is not None:
                         assert match_episode is not None
-                        match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True)
+                        match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True).item()
                         obs_left_img = match_data["obs"]['camera0_rgb'][-1]
                         vis_img = np.concatenate(
                             [obs_left_img, vis_img], axis=1
@@ -523,22 +523,29 @@ def main(
                                 match_episode = min(
                                     match_episode + 1, match_episode_max
                                 )
+                                print(f"match_episode: {match_episode}")
                         elif key_stroke == KeyCode(char="w"):
                             # Prev episode
                             if match_episode is not None:
                                 match_episode = max(match_episode - 1, match_episode_min)
+                                print(f"match_episode: {match_episode}")
                         elif key_stroke == KeyCode(char="m"):
                             # Move robot to the starting pose in waiting_time seconds
                             waiting_time = 5.0
+                            print("starting dataset smatching")
 
-                            if match_episode and match_dataset_path is not None:
+                            if match_episode is not None and match_dataset_path is not None:
                                 # DEBUG: to be tested
-                                match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True)
+                                match_data = np.load(os.path.join(match_dataset_path, "obs", f"{match_episode}/0.npy"), allow_pickle=True).item()
                                 for robot_idx in range(len(robots_config)):
-                                    target_pose = match_data["obs"][f"robot{robot_idx}_eef_pos"][-1]
+                                    start_pos = match_data["obs"][f"robot{robot_idx}_eef_pos"][-1]
+                                    start_rot = match_data["obs"][f"robot{robot_idx}_eef_rot_axis_angle"][-1]
+                                    target_pose = np.concatenate((start_pos, start_rot), axis=0)[np.newaxis, ...]
+
                                     gripper_target_pos = match_data["obs"][f"robot{robot_idx}_gripper_width"][-1]
-                                action = np.zeros((7 * target_pose.shape[0],))
-                                for robot_idx in range(target_pose.shape[0]):
+                                action = np.zeros((7 * len(robots_config),))
+                                print(target_pose)
+                                for robot_idx in range(len(robots_config)):
                                     action[7 * robot_idx + 0 : 7 * robot_idx + 6] = target_pose[robot_idx]
                                     action[7 * robot_idx + 6] = gripper_target_pos[robot_idx]
                                 env.exec_actions(
@@ -546,8 +553,10 @@ def main(
                                     timestamps=[t_command_target - time.monotonic() + time.time() + waiting_time],
                                     compensate_latency=False,
                                 )
-                                precise_wait(t_command_target - time.monotonic() + time.time() + waiting_time)
+                                print(f"executing action: {action}")
+                                precise_wait(t_cycle_end + waiting_time)
                                 iter_idx += int(waiting_time / dt)
+                                continue
                             
                         elif key_stroke == Key.backspace:
                             if click.confirm("Are you sure to drop an episode?"):
@@ -653,11 +662,11 @@ def main(
 
                     # get current pose
                     obs = env.get_obs()
-                    if no_mirror:
-                        for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
-                            obs[f"camera0_rgb"][i] = draw_predefined_mask(
-                                camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
-                            )
+                    # if no_mirror:
+                    #     for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                    #         obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                    #             camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                    #         )
                     episode_start_pose = list()
                     for robot_id in range(len(robots_config)):
                         pose = np.concatenate(
@@ -684,11 +693,11 @@ def main(
 
                         # get obs
                         obs = env.get_obs()
-                        if no_mirror:
-                            for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
-                                obs[f"camera0_rgb"][i] = draw_predefined_mask(
-                                    camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
-                                )
+                        # if no_mirror:
+                        #     for i, camera0_rgb in enumerate(obs[f"camera0_rgb"]):
+                        #         obs[f"camera0_rgb"][i] = draw_predefined_mask(
+                        #             camera0_rgb, (0,0,0), mirror=no_mirror, gripper=False, finger=False, use_aa=True
+                        #         )
                         obs_timestamps = obs["timestamp"]
                         print(f"Obs latency {time.time() - obs_timestamps[-1]}")
                         if np.mean(obs["camera0_rgb"][-1]) < 0.1:

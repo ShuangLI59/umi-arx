@@ -63,14 +63,14 @@ pkill -f eval_arx5
 
 # ====================Mixed====================
 # DP
-python scripts/eval_arx5.py \
-    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm/checkpoints/latest.ckpt \
-    -o data/experiments/0127-0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm-80epoch-cup-eval \
-    --policy_port 8769 \
-    --frequency 5 --steps_per_inference 4 \
-    --task_name cup \
-    --match_dataset_path data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-cup-eval \
-    --match_episode 0
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm/checkpoints/latest.ckpt \
+#     -o data/experiments/0127-0diffusion_policy_data500_umi_mix_-dataaug3-noactnorm-80epoch-cup-eval \
+#     --policy_port 8769 \
+#     --frequency 5 --steps_per_inference 4 \
+#     --task_name cup \
+#     --match_dataset_path data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-cup-eval \
+#     --match_episode 0
 
     # --match_dataset_path data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-towel-eval-final \
 
@@ -115,3 +115,42 @@ python scripts/eval_arx5.py \
 #     --different_history_freq \
 #     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
 #     --task_name cup
+
+
+
+# =========================================================================
+#                               Feb 20
+# =========================================================================
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v5/envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor/checkpoints/latest.ckpt \
+#     -o data/experiments/0220-envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v5/envrobodiff-noval-dataall_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor-langtype1-resume40e/checkpoints/latest.ckpt \
+#     -o data/experiments/0220-envrobodiff-noval-dataall_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor-langtype1-resume40e-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
+
+
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v5/dataall_umi_mix_dataaug3-lr1e-5-5-reformat/checkpoints/latest.ckpt \
+#     -o data/experiments/0220-dataall_umi_mix_dataaug3-lr1e-5-5-reformat-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup
+
+
+
+
+python scripts/eval_arx5.py \
+    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-reformat/checkpoints/latest.ckpt \
+    -o data/experiments/0220-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-reformat-cup-eval \
+    --different_history_freq \
+    --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+    --task_name cup

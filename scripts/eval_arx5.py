@@ -147,7 +147,7 @@ def solve_sphere_collision(ee_poses, robots_config):
 @click.option(
     "--steps_per_inference",
     "-si",
-    default=12,
+    default=4,
     type=int,
     help="Action horizon for inference.",
 )
@@ -158,7 +158,7 @@ def solve_sphere_collision(ee_poses, robots_config):
     help="Max duration for each epoch in seconds.",
 )
 @click.option(
-    "--frequency", "-f", default=8, type=float, help="Control frequency in Hz."
+    "--frequency", "-f", default=5, type=float, help="Control frequency in Hz."
 )
 @click.option(
     "--command_latency",
@@ -259,7 +259,7 @@ def main(
     print("obs_pose_rep", obs_pose_rep)
     print("action_pose_repr", action_pose_repr)
     # print("model_name:", cfg.policy.obs_encoder.model_name)
-    print("dataset_path:", cfg.task.dataset.dataset_path)
+    # print("dataset_path:", cfg.task.dataset.dataset_path)
 
     ####################################################################################################
     ####################################################################################################
@@ -330,7 +330,7 @@ def main(
         ) as env:
             cv2.setNumThreads(2)
             print("Waiting for camera")
-            time.sleep(1.0)
+            time.sleep(3.0)
 
             print("Waiting for env ready.")
             while not env.is_ready:

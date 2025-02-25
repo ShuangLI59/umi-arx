@@ -91,7 +91,7 @@ pkill -f eval_arx5
 #     -o data/experiments/0126-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-towel-eval-black-gripper \
 #     --different_history_freq \
 #     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
-#     --task_name towel
+#     --task_name cup
 
 # python scripts/eval_arx5.py \
 #     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-5-then-lr1e-5/checkpoints/latest.ckpt \
@@ -121,12 +121,12 @@ pkill -f eval_arx5
 # =========================================================================
 #                               Feb 20
 # =========================================================================
-# python scripts/eval_arx5.py \
-#     -i ../diffusion_policy/data/outputs_v5/envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor/checkpoints/latest.ckpt \
-#     -o data/experiments/0220-envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor-cup-eval \
-#     --different_history_freq \
-#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
-#     --task_name cup
+python scripts/eval_arx5.py \
+    -i ../diffusion_policy/data/outputs_v5/envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor/checkpoints/latest.ckpt \
+    -o data/experiments/0220-envrobodiff-noval-data500_umi_multi-lr1e-5-marlowe-bs32-2mode-refactor-towel-eval \
+    --different_history_freq \
+    --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+    --task_name towel
 
 
 # python scripts/eval_arx5.py \
@@ -148,9 +148,9 @@ pkill -f eval_arx5
 
 
 
-python scripts/eval_arx5.py \
-    -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-reformat/checkpoints/latest.ckpt \
-    -o data/experiments/0220-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-reformat-cup-eval \
-    --different_history_freq \
-    --policy_port 8768 --frequency 5 --steps_per_inference 4 \
-    --task_name cup
+# python scripts/eval_arx5.py \
+#     -i ../diffusion_policy/data/outputs_v4/umi_fewdata_lang/data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-reformat/checkpoints/latest.ckpt \
+#     -o data/experiments/0220-data500_umi_mix_dataaug-dataaugtype3-lr1e-5-5-s-cup-eval \
+#     --different_history_freq \
+#     --policy_port 8768 --frequency 5 --steps_per_inference 4 \
+#     --task_name cup

@@ -266,13 +266,20 @@ def main(
     ####################################################################################################
     # if 'unified-act-autoregressive' in ckpt_path:
     max_obs_buffer_size = 1000
-    if 'train_stage' in cfg:
-        if cfg.train_stage=='second_stage_autoregressive_transformer':
-            with open_dict(cfg):
-                cfg.task.shape_meta = cfg.task.dataset.shape_meta
-                cfg.task.shape_meta.obs.camera0_rgb.horizon = 16
-                cfg.task.shape_meta.obs.robot0_eef_pos.horizon = 16
-            max_obs_buffer_size = 1000
+    # if 'train_stage' in cfg:
+    #     if cfg.train_stage=='second_stage_autoregressive_transformer':
+    #         with open_dict(cfg):
+    #             cfg.task.shape_meta = cfg.task.dataset.shape_meta
+    #             cfg.task.shape_meta.obs.camera0_rgb.horizon = 16
+    #             cfg.task.shape_meta.obs.robot0_eef_pos.horizon = 16
+    #         max_obs_buffer_size = 1000
+
+    if cfg.name=='uva':
+        with open_dict(cfg):
+            # cfg.task.shape_meta = cfg.task.dataset.shape_meta
+            cfg.task.shape_meta.obs.camera0_rgb.horizon = 16
+            cfg.task.shape_meta.obs.robot0_eef_pos.horizon = 16
+        max_obs_buffer_size = 1000
     
     ####################################################################################################
     ####################################################################################################
